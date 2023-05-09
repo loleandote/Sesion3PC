@@ -1,0 +1,11 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/kevin/Documentos/Concurrente/Sesion3/esqueleto(3)/esqueleto'
+mkdir -p obj/ exec/
+gcc -Iinclude/ -c -Wall -ggdb src/manager.c -o obj/manager.o
+gcc -o exec/manager obj/manager.o -lpthread -lrt
+gcc -Iinclude/ -c -Wall -ggdb src/telefono.c -o obj/telefono.o
+gcc -o exec/telefono obj/telefono.o -lpthread -lrt
+gcc -Iinclude/ -c -Wall -ggdb src/linea.c -o obj/linea.o
+gcc -o exec/linea obj/linea.o -lpthread -lrt
+make: Leaving directory '/home/kevin/Documentos/Concurrente/Sesion3/esqueleto(3)/esqueleto'
+ 
