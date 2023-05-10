@@ -21,10 +21,7 @@ int main(int argc, char *argv[]) {
     struct mq_attr attr;
     mqd_t qHandler;
     mqd_t qHandlerLineas[NUMLINEAS];
-    char buf[BUFSIZ];
     char cLinea[TAMANO_MENSAJES];// denominamos el buzon linea con el tamaño de los mensajes
-
-    sprintf(cLinea,"%s",argv[1]);
     // Configuramos los atributos de la cola de mensajes
     attr.mq_flags = 0;
     attr.mq_maxmsg = NUMLINEAS;
@@ -43,22 +40,29 @@ int main(int argc, char *argv[]) {
         // Informamos que el teléfono está en espera
         printf("[TELEFONO %d] en espera...\n", pid);
         // Esperamos a recibir una llamada
-        int recibir1 = mq_receive(qHandler, buf, TAMANO_MENSAJES, NULL);
+        int recibir1 = mq_receive(qHandler, cLinea, TAMANO_MENSAJES, 0);
         if(recibir1== -1) {
                 perror("[TELEFONO] Error recibiendo mensaje de la cola de mensajes.");
                 exit(EXIT_FAILURE);
             }
-        printf("[TELEFONO %d] en conversación de llamada desde la línea: %d...\n", pid, cLinea);
+        printf("[TELEFONO %d] en conversación de llamada desde la línea: %s...\n", pid, cLinea);
         // Simulamos la conversación por un tiempo aleatorio entre 10 y 20 segundos
         sleep(rand() % 11 + 10);
 
         // Si recibimos el mensaje de "COLGAR", es porque la conversación ha terminado
         printf("[TELEFONO %d] ha colgado la llamada. [%s]\n", pid, cLinea);
         // Notificamos que la conversación ha terminado;
-            if (mq_send(qHandlerLineas, buf, strlen(cLinea) + 1, 0) == -1) {
-                perror("[TELEFONO] Error enviando mensaje de finalización a la línea.");
+        
+        char texto[1];
+        strncpy(texto, &cLinea[13],1);
+        printf("%s",texto);
+        int posicion=atoi(texto);
+        qHandlerLineas[posicion]=mq_open(cLinea,O_WRONLY);
+            if (mq_send(qHandlerLineas[posicion], cLinea, TAMANO_MENSAJES, 0) == -1) {
+                printf/*perror*/("[TELEFONO %d] Error enviando mensaje de finalización a la línea.\n", pid);
                 exit(EXIT_FAILURE);
             }
+            mq_close(qHandlerLineas[posicion]);
     }
 
     return EXIT_SUCCESS;

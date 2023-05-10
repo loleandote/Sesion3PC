@@ -34,12 +34,12 @@ mqd_t qHandlerLineas[NUMLINEAS];
 int main(int argc, char *argv[])
 {
     // Define variables locales
-    if (argc != 3)
+   /* if (argc != 3)
     {
         printf("Error: Los argumentos pasados por el terminal son incorrectos\n");
         printf("Ejemplo de ejecución: \n ./exec/manager <nTelefonos> <nLineas>\n");
         exit(EXIT_FAILURE);
-    }
+    }*/
     //int numTelefonos = atoi(argv[1]);
     //int numLineas = atoi(argv[2]);
     // Creamos los buzones
@@ -209,6 +209,7 @@ void lanzar_proceso_telefono(const int indice_tabla)
 void lanzar_proceso_linea(const int indice_tabla)
 {
     pid_t pid;
+        char cLinea[TAMANO_MENSAJES];
 
     switch (pid = fork())
     {
@@ -218,7 +219,6 @@ void lanzar_proceso_linea(const int indice_tabla)
         liberar_recursos();
         exit(EXIT_FAILURE);
     case 0:
-        char cLinea[TAMANO_MENSAJES];
         sprintf(cLinea,"%s%d", BUZON_LINEAS, indice_tabla);
         if (execl(RUTA_LINEA, CLASE_LINEA, cLinea, NULL) == -1)
         {

@@ -27,7 +27,6 @@ int main(int argc, char *argv[]) {
     //DECLAMOS LOS BUZONES
     mqd_t qHandlerLlamadas;
     mqd_t qHandlerLinea;
-     char buf[BUFSIZ];
     char cLinea[TAMANO_MENSAJES];// denominamos el buzon linea con el tamaño de los mensajes
     //char buffer[TAMANO_MENSAJES+1];//y el buffer del mismo modo pero sumandole 1
     //ahora en buzon linea colocamos 
@@ -58,29 +57,22 @@ int main(int argc, char *argv[]) {
         // Espera un tiempo aleatorio antes de verificar la cola de mensajes
         int tiempoEspera = random_between(1, 30);
         sleep(tiempoEspera);
-    
-        // Verifica si hay una llamada en la cola de mensajes
-        int recibir1 =mq_receive(qHandlerLinea,buf ,sizeof(TAMANO_MENSAJES+1), NULL);
-        
-        //controlamos el error 
-        if(recibir1 == -1) {
-            perror("error al recibir");    
-        }  
-        printf("Linea[%d] ha recibido una llamada [%s]\n", pid, cLinea);
-        printf("Linea[%d] esperando fin de conversacion[%s]\n", pid,NULL);
+
+        printf("Linea[%d] ha recibido una llamada (%s)\n", pid, cLinea);
+        printf("Linea[%d] esperando fin de conversacion\n", pid);
         // Envía un mensaje a la cola de llamadas para ser atendida
-        int envio= mq_send(qHandlerLlamadas,buf, strlen(cLinea) + 1, 0); 
+        int envio= mq_send(qHandlerLlamadas,cLinea, strlen(cLinea), 0); 
         if (envio== -1) {
             perror("mq_send");
             exit(EXIT_FAILURE);
         }
         // Espera la notificación de un teléfono de que la llamada ha finalizado
-        int recibir2 = mq_receive(qHandlerLinea, cLinea,sizeof(TAMANO_MENSAJES+1), NULL);
+        int recibir2 = mq_receive(qHandlerLinea, cLinea,sizeof(cLinea), 0);
 
         if(recibir2 == -1) {
         perror("error al recibir");    
         }
-        printf("Linea[%d]conversacion finalizada[%s]\n", pid); 
+        printf("Linea[%d]conversacion finalizada\n", pid); 
             // Notifica la recepción del teléfono y vuelve al estado de espera de llamada
     }
 
