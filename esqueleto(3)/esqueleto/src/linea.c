@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
         int tiempoEspera = random_between(1, 30);
         sleep(tiempoEspera);
 
-        printf("Linea[%d] ha recibido una llamada (%s)\n", pid, cLinea);
-        printf("Linea[%d] esperando fin de conversacion\n", pid);
+        printf("Linea[%d] llamada recibida (%s)...\n", pid, cLinea);
+        printf("Linea[%d] esperando fin de conversacion...\n", pid);
         // Envía un mensaje a la cola de llamadas para ser atendida
         int envio= mq_send(qHandlerLlamadas,cLinea, strlen(cLinea), 0); 
         if (envio== -1) {
@@ -75,13 +75,6 @@ int main(int argc, char *argv[]) {
         printf("Linea[%d]conversacion finalizada\n", pid); 
             // Notifica la recepción del teléfono y vuelve al estado de espera de llamada
     }
-
-    // Cierra la cola de mensajes de la línea
-    if (mq_close(qHandlerLinea) == -1) {
-        perror("mq_close");
-        exit(EXIT_FAILURE);
-    }
-
     return EXIT_SUCCESS;
 }
 

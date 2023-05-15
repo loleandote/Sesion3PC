@@ -30,37 +30,25 @@ struct TProcess_t *g_process_lineas_table;
 mqd_t qHandlerLlamadas;
 mqd_t qHandlerLineas[NUMLINEAS];
 
-
 int main(int argc, char *argv[])
 {
-    // Define variables locales
-   /* if (argc != 3)
-    {
-        printf("Error: Los argumentos pasados por el terminal son incorrectos\n");
-        printf("Ejemplo de ejecución: \n ./exec/manager <nTelefonos> <nLineas>\n");
-        exit(EXIT_FAILURE);
-    }*/
-    //int numTelefonos = atoi(argv[1]);
-    //int numLineas = atoi(argv[2]);
-    // Creamos los buzones
     crear_buzones();
 
     // Manejador de Ctrl-C
     instalar_manejador_senhal();
- 
+
     // Crea Tabla para almacenar los pids de los procesos
-    iniciar_tabla_procesos(NUMTELEFONOS,NUMLINEAS);
+    iniciar_tabla_procesos(NUMTELEFONOS, NUMLINEAS);
 
     // Tenemos todo
     // Lanzamos los procesos
-    crear_procesos(NUMTELEFONOS,NUMLINEAS);
-  
+    crear_procesos(NUMTELEFONOS, NUMLINEAS);
+
     // Esperamos a que finalicen las lineas
     esperar_procesos();
 
     // Matamos los telefonos y cualquier otro proceso restante
     terminar_procesos();
-
 
     // Finalizamos Manager
     printf("\n[MANAGER] Terminacion del programa (todos los procesos terminados).\n");
@@ -68,36 +56,40 @@ int main(int argc, char *argv[])
 
     return EXIT_SUCCESS;
 }
-//creamos los buzones, crearemos un buzon para las llamadas y otro para las lineas 
-void crear_buzones() {
+// creamos los buzones, crearemos un buzon para las llamadas y otro para las lineas
+void crear_buzones()
+{
     // Buzón de llamadas
-    struct mq_attr atributos;//definimos mq_atrtr el cual lo llamamos atributos para co nocer los atributos de nuestro buzon 
-    atributos.mq_flags = 0; //lo ponemos a 0 porque no tendremmos opcionesa adicionales
-    atributos.mq_maxmsg = NUMLINEAS;//el numero maximo sera el numero de lineas que puede haber en la cola 
-    atributos.mq_msgsize = TAMANO_MENSAJES;//el tamaño sera el que hemos establecido en definitions.h, el cual es 64
-    atributos.mq_curmsgs = 0;// establecemos que el numero actual de mensajes en el buzon es cero
+    struct mq_attr atributos;               // definimos mq_atrtr el cual lo llamamos atributos para co nocer los atributos de nuestro buzon
+    atributos.mq_flags = 0;                 // lo ponemos a 0 porque no tendremmos opcionesa adicionales
+    atributos.mq_maxmsg = NUMLINEAS;        // el numero maximo sera el numero de lineas que puede haber en la cola
+    atributos.mq_msgsize = TAMANO_MENSAJES; // el tamaño sera el que hemos establecido en definitions.h, el cual es 64
+    atributos.mq_curmsgs = 0;               // establecemos que el numero actual de mensajes en el buzon es cero
 
-    //ahora por medio del mq_open creamos una cola de mensajes con los siguintes atributos 
-    //BUZON_LLAMADAS: este el nombre de la cola de mensaje que definimos en definitions.h
-    //O_CREAT | O_RDW: son banderas de creacion (este crea la cola de mensajes si no existe) y la de lectura y escritura
-    //S_IRUSR | S_IWUSR: son los permisos que damos a la cola de mensaje, en este caso de lectura y escritura para el que lo crea 
+    // ahora por medio del mq_open creamos una cola de mensajes con los siguintes atributos
+    // BUZON_LLAMADAS: este el nombre de la cola de mensaje que definimos en definitions.h
+    // O_CREAT | O_RDW: son banderas de creacion (este crea la cola de mensajes si no existe) y la de lectura y escritura
+    // S_IRUSR | S_IWUSR: son los permisos que damos a la cola de mensaje, en este caso de lectura y escritura para el que lo crea
     //&atributos un puntero que contiene todos los atributos que anteriormente definimos para nuestra cola de mensajes
     qHandlerLlamadas = mq_open(BUZON_LLAMADAS, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, &atributos);
-    if (qHandlerLlamadas == (mqd_t)-1) {//en el caso de ser -1 es un error 
+    if (qHandlerLlamadas == (mqd_t)-1)
+    { // en el caso de ser -1 es un error
         perror("No fue posible crear la cola de mensajes de las llamadas");
         exit(EXIT_FAILURE);
     }
 
     // Buzón de líneas
-    char cLinea[TAMANO_MENSAJES];
+    char cLinea[strlen(BUZON_LINEAS)+20];
     int i;
-    //ahora cremaos un bucle para iterar en el numero de lineas que existen
-    for (i = 0; i < NUMLINEAS; i++) {
-        //ahora creamos el nombre de la cola de mensaje de la lienas 
-        sprintf(cLinea,"%s%d", BUZON_LINEAS, i);
-        //creamos el buzon de la misma manera como lo hicimos con el de las llamadas
+    // ahora cremaos un bucle para iterar en el numero de lineas que existen
+    for (i = 0; i < NUMLINEAS; i++)
+    {
+        // ahora creamos el nombre de la cola de mensaje de la lienas
+        sprintf(cLinea, "%s%d", BUZON_LINEAS, i);
+        // creamos el buzon de la misma manera como lo hicimos con el de las llamadas
         qHandlerLineas[i] = mq_open(cLinea, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, &atributos);
-        if (qHandlerLineas[i] == (mqd_t)-1) {//controlamos si hay un error
+        if (qHandlerLineas[i] == (mqd_t)-1)
+        { // controlamos si hay un error
             perror("No fue posible crear la cola de mensajes de las lineas");
             exit(EXIT_FAILURE);
         }
@@ -171,7 +163,7 @@ void crear_procesos(int numTelefonos, int numLineas)
         lanzar_proceso_telefono(i);
     } // end for
     // realizamos una impresion con los telefonos totales que han sido creados
-    
+
 } // end crear_procesos
 //-------------------------------------------------------------------------------------------------
 void lanzar_proceso_telefono(const int indice_tabla)
@@ -209,7 +201,7 @@ void lanzar_proceso_telefono(const int indice_tabla)
 void lanzar_proceso_linea(const int indice_tabla)
 {
     pid_t pid;
-        char cLinea[TAMANO_MENSAJES];
+    char cLinea[TAMANO_MENSAJES];
 
     switch (pid = fork())
     {
@@ -219,7 +211,7 @@ void lanzar_proceso_linea(const int indice_tabla)
         liberar_recursos();
         exit(EXIT_FAILURE);
     case 0:
-        sprintf(cLinea,"%s%d", BUZON_LINEAS, indice_tabla);
+        sprintf(cLinea, "%s%d", BUZON_LINEAS, indice_tabla);
         if (execl(RUTA_LINEA, CLASE_LINEA, cLinea, NULL) == -1)
         {
             fprintf(stderr, "[MANAGER] Hemos encontrado un error usando execl() en el poceso %s: %s.\n", CLASE_LINEA, strerror(errno));
@@ -234,9 +226,10 @@ void lanzar_proceso_linea(const int indice_tabla)
 // Este metodo se utiliza para esperar que los procesos creados por el programa terminen.
 void esperar_procesos()
 {
-    int i; 
-    for (i=0; i< NUMLINEAS; i++){
-        waitpid(g_process_lineas_table[i].pid,0,0);
+    int i;
+    for (i = 0; i < NUMLINEAS; i++)
+    {
+        waitpid(g_process_lineas_table[i].pid, 0, 0);
     }
 } // end esperar_procesos
 //-------------------------------------------------------------------------------------------------------
@@ -244,54 +237,29 @@ void esperar_procesos()
 // Este metodo se encarga de terminar los procesos enviadno una señal de SIGINT y asi terminarlo de manera ordenada
 void terminar_procesos(void)
 {
-    // declaramos la variable que utilizaremos para los For's
-    int i;
     printf("\n--- Finalizando procesos ---\n");
     // recorremos tosos los procesos lineas con el siguinte for
-    for (i = 0; i < g_lineasProcesses; i++)
-    {
-        // si el pid que se encuentra en la posicion i es distinto de cero significa que ese codigo se esta ejecutando
-        if (g_process_lineas_table[i].pid != 0)
-        {
-            // printf("Estoy aqui lines");
-            // imprimimos que el manager esta terminando el proceso
-            printf("[MANAGER] Terminando proceso %s [%d]...\n", g_process_lineas_table[i].clase, g_process_lineas_table[i].pid);
-            // utlizamos la primitiva kill para ir matando a cada proceso, y si el el resultado de dicha primitiva sea -1 significa que hubo un error
-            if (kill(g_process_lineas_table[i].pid, SIGINT) == -1)
-            {
-                // notificamos el error
-                fprintf(stderr, "[MANAGER] Error al usar kill() en proceso %d: %s.\n", g_process_lineas_table[i].pid, strerror(errno));
-            } // end if
-        }     // end if
-    }         // end for
-    // realizamos exactamente lo mismo solamente que para los procesos telefonos
-    for (i = 0; i < g_telefonosProcesses; i++)
-    {
-        if (g_process_telefonos_table[i].pid != 0)
-        {
-            printf("[MANAGER] Terminando proceso %s [%d]...\n", g_process_telefonos_table[i].clase, g_process_telefonos_table[i].pid);
-            if (kill(g_process_telefonos_table[i].pid, SIGINT) == -1)
-            {
-                fprintf(stderr, "[MANAGER] Error al usar kill() en proceso %d: %s.\n", g_process_telefonos_table[i].pid, strerror(errno));
-            } // end if
-        }     // end if
-    }         // end for
+    terminar_procesos_especificos(g_process_lineas_table, g_lineasProcesses);
+    terminar_procesos_especificos(g_process_telefonos_table, g_telefonosProcesses);
 } // end terminar_procesos
 //--------------------------------------------------------------------------------------------------------
 
 // al igual lo que temrianr procesos este envia una señal de SIGNIT para finalizar un proceso solo que este caso sera un proceso en particular.
 void terminar_procesos_especificos(struct TProcess_t *process_table, int process_num)
 {
-    printf("[MANAGER] Terminando proceso %s [%d]...\n", process_table[process_num].clase, process_table[process_num].pid);
-    // Utilizamos la primitiva kill para matar al proceso especifico, ya que especificamos elindice de la tabla y el numero del proceso.
-    // si en el caso de que kill sea -1, se amrca como un error y se notifica
-    if (kill(process_table[process_num].pid, SIGINT) == -1)
+    for (int i = 0; i < process_num; i++)
     {
-        fprintf(stderr, "[MANAGER] Hemos encontrado un error al usar kill() en proceso %d: %s.\n", process_table[process_num].pid, strerror(errno));
-    } // end if
-    else
-    {
-        process_table[process_num].pid = 0;
+        printf("[MANAGER] Terminando proceso %s [%d]...\n", process_table[i].clase, process_table[i].pid);
+        // Utilizamos la primitiva kill para matar al proceso especifico, ya que especificamos elindice de la tabla y el numero del proceso.
+        // si en el caso de que kill sea -1, se amrca como un error y se notifica
+        if (kill(process_table[i].pid, SIGINT) == -1)
+        {
+            fprintf(stderr, "[MANAGER] Hemos encontrado un error al usar kill() en proceso %d: %s.\n", process_table[i].pid, strerror(errno));
+        }
+        else
+        {
+            process_table[i].pid = 0;
+        }
     }
 
 } // end terminar_procesos_especificos
@@ -303,5 +271,27 @@ void liberar_recursos()
     // utilizmaos la funcion free para liberar la memoria que antes hemos asignado con malloc
     free(g_process_telefonos_table);
     free(g_process_lineas_table);
+    if(mq_close(qHandlerLlamadas)==-1){
+        perror("mq_close");
+        exit(EXIT_FAILURE);
+    }
+    if(mq_unlink(BUZON_LLAMADAS)==-1){
+        perror("mq_unlink");
+        exit(EXIT_FAILURE);
+    }
+    char cLinea[strlen(BUZON_LINEAS)+20];
+    
+    for (int i = 0; i < g_lineasProcesses; i++)
+    {
+        sprintf(cLinea, "%s%d", BUZON_LINEAS, i);
+        if (mq_close(qHandlerLineas[i]) == -1) {
+        perror("mq_close");
+        exit(EXIT_FAILURE);
+        }
+        if (mq_unlink(cLinea)==-1){
+        perror("mq_unlink");
+        exit(EXIT_FAILURE);
+        }
+    }
 } // end liberar_recursos
 //--------------------------------------------------------------------------------------------------
